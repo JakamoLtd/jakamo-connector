@@ -1,0 +1,51 @@
+﻿# Jakamo Connector Configuration
+# This file will be automatically configured during installation
+
+[Api]
+# Jakamo API endpoint
+BaseUrl=https://demo.thejakamo.com
+
+# Your Tenant ID
+TenantId=YOUR_TENANT_ID_HERE
+
+# OAuth2 Client ID (provided by Jakamo support)
+ClientId=YOUR_CLIENT_ID_HERE
+
+# OAuth2 Client Secret (provided by Jakamo support)
+ClientSecret=YOUR_CLIENT_SECRET_HERE
+
+# API Scope
+ApiScope=https://demo.jakamoapp.com/.default
+
+[Folders]
+# Folder where you place XML files to send to Jakamo
+InboundOrders=/var/lib/jakamo/to_jakamo
+
+# Successfully processed orders are moved here
+ProcessedOrders=/var/lib/jakamo/processed
+
+# Failed orders are moved here for review
+FailedOrders=/var/lib/jakamo/failed
+
+# Order responses from Jakamo are saved here
+OrderResponses=/var/lib/jakamo/from_jakamo
+
+[Polling]
+# How often to check for new inbound files (seconds)
+InboundCheckInterval=30
+
+# How often to check for order responses (seconds)
+ResponseCheckInterval=60
+
+# Maximum retry attempts for failed operations
+MaxRetryAttempts=3
+
+[Logging]
+# Enable file logging (true/false)
+EnableFileLogging=true
+
+# Log file location
+LogFile=/var/log/jakamo/connector.log
+
+# Log level: Debug, Information, Warning, Error
+LogLevel=Information
