@@ -2,7 +2,7 @@
 
 public class LoggingConfig
 {
-    public bool EnableFileLogging { get; set; }
-    public string LogFilePath { get; set; }
-    public string LogLevel { get; set; }
+    public required bool EnableFileLogging { get; init; }
+    public required string LogFilePath { get; init; }
+    public required string LogLevel { get; init; }
 }

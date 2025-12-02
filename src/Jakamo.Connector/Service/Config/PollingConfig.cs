@@ -2,8 +2,8 @@
 
 public class PollingConfig
 {
-    public int InboundCheckIntervalSeconds { get; set; }
-    public int ResponseCheckIntervalSeconds { get; set; }
-    public int MaxRetryAttempts { get; set; }
+    public required int InboundCheckIntervalSeconds { get; init; }
+    public required int ResponseCheckIntervalSeconds { get; init; }
+    public required int MaxRetryAttempts { get; init; }
 }
 

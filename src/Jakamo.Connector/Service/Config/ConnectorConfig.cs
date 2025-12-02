@@ -4,10 +4,10 @@ namespace Jakamo.Api.Connector.Service.Config;
 
 public class ConnectorConfig
 {
-    public string BaseUrl { get; set; }
-    public Oauth2Credentials Oauth2Credentials { get; set; }
-    public FolderConfig Folders { get; set; }
-    public PollingConfig Polling { get; set; }
-    public LoggingConfig Logging { get; set; }
+    public required string BaseUrl { get; init; }
+    public required Oauth2Credentials Oauth2Credentials { get; init; }
+    public required FolderConfig Folders { get; init; }
+    public required PollingConfig Polling { get; init; }
+    public required LoggingConfig Logging { get; init; }
 }
 
