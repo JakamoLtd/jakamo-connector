@@ -139,6 +139,7 @@ public class JakamoConnectorServiceTests : IDisposable
 
         await WaitForConditionAsync(() => !Directory.GetFiles(_inbound, "*.xml").Any());
         await cts.CancelAsync();
+        await service.StopAsync(CancellationToken.None);
 
         Assert.Single(Directory.GetFiles(_processed));
         Assert.Empty(Directory.GetFiles(_failed));
@@ -161,6 +162,7 @@ public class JakamoConnectorServiceTests : IDisposable
 
         await WaitForConditionAsync(() => Directory.GetFiles(_failed).Any());
         await cts.CancelAsync();
+        await service.StopAsync(CancellationToken.None);
 
         Assert.Empty(Directory.GetFiles(_processed));
         // The original file + the .error.txt file
@@ -187,6 +189,7 @@ public class JakamoConnectorServiceTests : IDisposable
 
         await WaitForConditionAsync(() => Directory.GetFiles(_failed, "*.error.txt").Any());
         await cts.CancelAsync();
+        await service.StopAsync(CancellationToken.None);
 
         var errorFile = Directory.GetFiles(_failed, "*.error.txt").Single();
         var content = await File.ReadAllTextAsync(errorFile);
@@ -216,6 +219,7 @@ public class JakamoConnectorServiceTests : IDisposable
 
         await WaitForConditionAsync(() => Directory.GetFiles(_processed).Any());
         await cts.CancelAsync();
+        await service.StopAsync(CancellationToken.None);
 
         mockClient.Verify(c => c.UpdateOrder("PO-001", It.IsAny<Stream>()), Times.Once);
         Assert.Single(Directory.GetFiles(_processed));
@@ -242,6 +246,7 @@ public class JakamoConnectorServiceTests : IDisposable
 
         await WaitForConditionAsync(() => Directory.GetFiles(_processed).Any());
         await cts.CancelAsync();
+        await service.StopAsync(CancellationToken.None);
 
         mockClient.Verify(c => c.SendStatusMessage("PO-002", It.IsAny<Stream>()), Times.Once);
         Assert.Single(Directory.GetFiles(_processed));
@@ -265,6 +270,7 @@ public class JakamoConnectorServiceTests : IDisposable
 
         await WaitForConditionAsync(() => Directory.GetFiles(_failed).Any());
         await cts.CancelAsync();
+        await service.StopAsync(CancellationToken.None);
 
         Assert.Empty(Directory.GetFiles(_processed));
         Assert.Contains(Directory.GetFiles(_failed), f => f.EndsWith(".xml"));
@@ -285,6 +291,7 @@ public class JakamoConnectorServiceTests : IDisposable
 
         await WaitForConditionAsync(() => Directory.GetFiles(_failed).Any());
         await cts.CancelAsync();
+        await service.StopAsync(CancellationToken.None);
 
         Assert.Empty(Directory.GetFiles(_processed));
         Assert.Contains(Directory.GetFiles(_failed), f => f.EndsWith(".xml"));
@@ -307,6 +314,7 @@ public class JakamoConnectorServiceTests : IDisposable
 
         await WaitForConditionAsync(() => Directory.GetFiles(_processed).Length == 3);
         await cts.CancelAsync();
+        await service.StopAsync(CancellationToken.None);
 
         Assert.Empty(Directory.GetFiles(_inbound));
         Assert.Equal(3, Directory.GetFiles(_processed).Length);
@@ -331,6 +339,7 @@ public class JakamoConnectorServiceTests : IDisposable
 
         await WaitForConditionAsync(() => Directory.GetFiles(_processed).Any());
         await cts.CancelAsync();
+        await service.StopAsync(CancellationToken.None);
 
         Assert.Single(Directory.GetFiles(_processed));
         Assert.Empty(Directory.GetFiles(_failed));
@@ -351,6 +360,7 @@ public class JakamoConnectorServiceTests : IDisposable
 
         await WaitForConditionAsync(() => Directory.GetFiles(_failed, "*.error.txt").Any());
         await cts.CancelAsync();
+        await service.StopAsync(CancellationToken.None);
 
         var errorContent = await File.ReadAllTextAsync(Directory.GetFiles(_failed, "*.error.txt").Single());
         Assert.Contains("422", errorContent);
@@ -370,6 +380,7 @@ public class JakamoConnectorServiceTests : IDisposable
 
         await WaitForConditionAsync(() => Directory.GetFiles(_processed).Any());
         await cts.CancelAsync();
+        await service.StopAsync(CancellationToken.None);
 
         handler.Protected().Verify("SendAsync", Times.Once(),
             ItExpr.Is<HttpRequestMessage>(r =>
@@ -390,6 +401,7 @@ public class JakamoConnectorServiceTests : IDisposable
 
         await WaitForConditionAsync(() => Directory.GetFiles(_failed).Any());
         await cts.CancelAsync();
+        await service.StopAsync(CancellationToken.None);
 
         Assert.Empty(Directory.GetFiles(_processed));
         Assert.Contains(Directory.GetFiles(_failed), f => f.EndsWith(".pdf"));
@@ -408,6 +420,7 @@ public class JakamoConnectorServiceTests : IDisposable
 
         await WaitForConditionAsync(() => Directory.GetFiles(_processed).Any());
         await cts.CancelAsync();
+        await service.StopAsync(CancellationToken.None);
 
         handler.Protected().Verify("SendAsync", Times.Once(),
             ItExpr.Is<HttpRequestMessage>(r =>
@@ -427,6 +440,7 @@ public class JakamoConnectorServiceTests : IDisposable
 
         await WaitForConditionAsync(() => Directory.GetFiles(_processed).Any());
         await cts.CancelAsync();
+        await service.StopAsync(CancellationToken.None);
 
         handler.Protected().Verify("SendAsync", Times.Once(),
             ItExpr.Is<HttpRequestMessage>(r =>

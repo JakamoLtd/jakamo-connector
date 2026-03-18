@@ -21,7 +21,7 @@ tar -xvzf ./jakamo-connector-1.0.1.tar.gz
 
 4. Navigate to the directory
 ```bash
-cd .jakamo-connector-1.0.1
+cd jakamo-connector-1.0.1
 ```
 
 5. Run the installation script:

@@ -162,7 +162,7 @@ public class JakamoConnectorService : BackgroundService
     private async Task<(bool Success, string? Error)> UploadAttachment(string filePath, string fileName, string orderNumber)
     {
         var token = await _tokenProvider.GetAccessTokenAsync();
-        var httpClient = _httpClientFactory.CreateClient();
+        var httpClient = _httpClientFactory.CreateClient(string.Empty);
         httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
 
         using var fileStream = File.OpenRead(filePath);
@@ -198,6 +198,14 @@ public class JakamoConnectorService : BackgroundService
             ".jpg" or ".jpeg" => "image/jpeg",
             _ => "application/octet-stream"
         };
+
+    private static string? SanitizeFileName(string? value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+            return null;
+        var invalid = Path.GetInvalidFileNameChars();
+        return string.Concat(value.Select(c => Array.IndexOf(invalid, c) >= 0 ? '_' : c));
+    }
 
     private async Task ProcessInboundOrders()
     {
@@ -324,6 +332,7 @@ public class JakamoConnectorService : BackgroundService
                         break;
                     default:
                         _logger.LogWarning("Unknown response type with root element: {RootElement}", rootName);
+                        await AcknowledgeResponse(ackUri, null);
                         break;
                 }
             }
@@ -338,7 +347,8 @@ public class JakamoConnectorService : BackgroundService
     private async Task SaveOrderResponse(XDocument doc, string? orderNumber, string? ackUri)
     {
         var timestamp = DateTime.Now.ToString("yyyyMMdd_HHmmss");
-        var fileName = $"OrderResponse-{orderNumber}-{timestamp}.xml";
+        var safeOrderNumber = SanitizeFileName(orderNumber);
+        var fileName = $"OrderResponse-{safeOrderNumber}-{timestamp}.xml";
         await File.WriteAllTextAsync(Path.Combine(_config.Folders.OrderResponses, fileName), doc.ToString());
         _logger.LogInformation("✓ Saved order response: {FileName}", fileName);
         await AcknowledgeResponse(ackUri, orderNumber);
@@ -349,8 +359,9 @@ public class JakamoConnectorService : BackgroundService
         var orderNumber = doc.Descendants()
             .FirstOrDefault(e => e.Name.LocalName == "OrderID")?.Value;
         var timestamp = DateTime.Now.ToString("yyyyMMdd_HHmmss");
-        var fileName = orderNumber != null
-            ? $"StatusMessage-{orderNumber}-{timestamp}.xml"
+        var safeOrderNumber = SanitizeFileName(orderNumber);
+        var fileName = safeOrderNumber != null
+            ? $"StatusMessage-{safeOrderNumber}-{timestamp}.xml"
             : $"StatusMessage-{timestamp}.xml";
         await File.WriteAllTextAsync(Path.Combine(_config.Folders.OrderResponses, fileName), doc.ToString());
         _logger.LogInformation("✓ Saved status message: {FileName}", fileName);
@@ -368,25 +379,28 @@ public class JakamoConnectorService : BackgroundService
         if (string.IsNullOrEmpty(attachmentUri) || string.IsNullOrEmpty(originalFileName))
         {
             _logger.LogError("Attachment XML is missing URI or Filename");
+            await AcknowledgeResponse(ackUri, null);
             return;
         }
 
         var token = await _tokenProvider.GetAccessTokenAsync();
-        var httpClient = _httpClientFactory.CreateClient();
+        var httpClient = _httpClientFactory.CreateClient(string.Empty);
         httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
 
         var response = await httpClient.GetAsync(attachmentUri);
         if (!response.IsSuccessStatusCode)
         {
             _logger.LogError("Failed to download attachment. Status: {StatusCode}", response.StatusCode);
+            await AcknowledgeResponse(ackUri, orderNumber);
             return;
         }
 
-        var filePath = Path.Combine(_config.Folders.OrderResponses, originalFileName);
+        var safeFileName = Path.GetFileName(originalFileName);
+        var filePath = Path.Combine(_config.Folders.OrderResponses, safeFileName);
         using var fileStream = File.Create(filePath);
         await response.Content.CopyToAsync(fileStream);
 
-        _logger.LogInformation("✓ Saved attachment: {FileName}", originalFileName);
+        _logger.LogInformation("✓ Saved attachment: {FileName}", safeFileName);
         await AcknowledgeResponse(ackUri, orderNumber);
     }
 
