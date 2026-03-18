@@ -40,6 +40,10 @@ ResponseCheckInterval=60
 # Maximum retry attempts for failed operations
 MaxRetryAttempts=3
 
+[Responses]
+# Set to true to acknowledge and discard incoming StatusMessage responses without saving them
+DiscardStatusMessages=false
+
 [Logging]
 # Enable file logging (true/false)
 EnableFileLogging=true

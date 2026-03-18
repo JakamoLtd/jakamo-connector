@@ -1,0 +1,11 @@
+# Ensure shell scripts always have LF line endings
+*.sh        text eol=lf
+
+# Config files used on Linux should also be LF
+*.conf      text eol=lf
+*.conf_sample text eol=lf
+
+# Windows scripts keep CRLF
+*.ps1       text eol=crlf
+*.bat       text eol=crlf
+*.cmd       text eol=crlf

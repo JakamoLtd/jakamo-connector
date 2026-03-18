@@ -11,17 +11,17 @@
 
 1. Download installation package from
 ```bash
-wget https://github.com/JakamoLtd/jakamo-connector/releases/download/1.0.0/jakamo-connector-1.0.0.tar.gz
+wget https://github.com/JakamoLtd/jakamo-connector/releases/download/1.0.1/jakamo-connector-1.0.1.tar.gz
 ```
 
 2. Extract the installation package
 ```bash
-tar -xvzf .\jakamo-connector-1.0.0.tar.gz
+tar -xvzf ./jakamo-connector-1.0.1.tar.gz
 ```
 
 4. Navigate to the directory
 ```bash
-cd .\jakamo-connector-1.0.0
+cd .jakamo-connector-1.0.1
 ```
 
 5. Run the installation script:
