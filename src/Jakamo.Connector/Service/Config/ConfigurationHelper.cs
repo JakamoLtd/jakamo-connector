@@ -137,6 +137,11 @@ public static class ConfigurationHelper
                     MaxRetryAttempts = configuration.GetValue<int>("Polling:MaxRetryAttempts", 3)
                 },
 
+                Responses = new ResponseConfig
+                {
+                    DiscardStatusMessages = configuration.GetValue<bool>("Responses:DiscardStatusMessages", false)
+                },
+
                 Logging = new LoggingConfig
                 {
                     EnableFileLogging = configuration.GetValue<bool>("Logging:EnableFileLogging", true),
@@ -163,6 +168,9 @@ public static class ConfigurationHelper
             Console.WriteLine($"  InboundCheckInterval: {config.Polling.InboundCheckIntervalSeconds}s");
             Console.WriteLine($"  ResponseCheckInterval: {config.Polling.ResponseCheckIntervalSeconds}s");
             Console.WriteLine($"  MaxRetryAttempts: {config.Polling.MaxRetryAttempts}");
+            Console.WriteLine();
+            Console.WriteLine("Response settings:");
+            Console.WriteLine($"  DiscardStatusMessages: {config.Responses.DiscardStatusMessages}");
             Console.WriteLine();
             Console.WriteLine("Logging settings:");
             Console.WriteLine($"  EnableFileLogging: {config.Logging.EnableFileLogging}");

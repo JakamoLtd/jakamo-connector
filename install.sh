@@ -83,6 +83,89 @@ backup_config() {
     fi
 }
 
+merge_config() {
+    local sample="${SCRIPT_DIR}/config/jakamo-connector.conf_sample"
+    local config="${CONFIG_FILE}"
+    local added=0
+    local current_section=""
+    local pending_comment=""
+
+    if [ ! -f "$sample" ]; then
+        print_warning "Sample config not found, skipping merge check"
+        return
+    fi
+
+    print_info "Checking for new configuration options..."
+
+    while IFS= read -r line; do
+        # Track section headers
+        if [[ "$line" =~ ^\[(.+)\]$ ]]; then
+            current_section="${BASH_REMATCH[1]}"
+            pending_comment=""
+            continue
+        fi
+
+        # Accumulate comment/blank lines to carry with the next key
+        if [[ "$line" =~ ^# ]] || [[ -z "$line" ]]; then
+            pending_comment+="${line}"$'\n'
+            continue
+        fi
+
+        # key=value line
+        if [[ "$line" =~ ^([^=]+)= ]]; then
+            key="${BASH_REMATCH[1]}"
+
+            if ! grep -q "^${key}=" "$config"; then
+                print_info "  Adding missing option: ${key} (under [${current_section}])"
+
+                local insert_file tmp
+                insert_file=$(mktemp)
+                tmp=$(mktemp)
+                printf '%s\n' "${pending_comment}${line}" > "$insert_file"
+
+                if grep -q "^\[${current_section}\]" "$config"; then
+                    # Insert at the end of the existing section (before the next one, or EOF)
+                    awk -v section="[${current_section}]" -v insertfile="$insert_file" '
+                        BEGIN { in_section=0; done=0 }
+                        {
+                            if (!done && in_section && /^\[/) {
+                                print ""
+                                while ((getline ins < insertfile) > 0) print ins
+                                done=1
+                            }
+                            print
+                            if ($0 == section) in_section=1
+                        }
+                        END {
+                            if (!done && in_section) {
+                                print ""
+                                while ((getline ins < insertfile) > 0) print ins
+                            }
+                        }
+                    ' "$config" > "$tmp"
+                else
+                    # Section is entirely absent — append it
+                    cp "$config" "$tmp"
+                    printf '\n[%s]\n' "$current_section" >> "$tmp"
+                    cat "$insert_file" >> "$tmp"
+                fi
+
+                cp "$tmp" "$config"
+                rm -f "$tmp" "$insert_file"
+                added=$((added + 1))
+            fi
+
+            pending_comment=""
+        fi
+    done < "$sample"
+
+    if [ "$added" -gt 0 ]; then
+        print_info "Added ${added} new configuration option(s) — review ${CONFIG_FILE}"
+    else
+        print_info "Configuration is up to date, no new options needed"
+    fi
+}
+
 prompt_configuration() {
     echo ""
     echo -e "${CYAN}╔═══════════════════════════════════════════════════════════════╗${NC}"
@@ -147,7 +230,7 @@ prompt_configuration() {
     echo -e "${BLUE}Data Folder Configuration:${NC}"
     echo -e -n "Enter root folder for data files [/var/lib/jakamo]: "
     read DATA_DIR_INPUT
-    DATA_DIR=${DATA_DIR_INPUT:-/var/lib/jakamo}
+    DATA_DIR=$(echo "${DATA_DIR_INPUT:-/var/lib/jakamo}" | tr -d '\r')
 
     echo ""
     echo -e "${GREEN}Configuration Summary:${NC}"
@@ -252,9 +335,9 @@ setup_configuration() {
     mkdir -p ${CONFIG_DIR}
     
     if [ -f "${CONFIG_FILE}" ] && [ -z "$JAKAMO_BASE_URL" ]; then
-        print_info "Configuration file already exists, keeping existing configuration"
-        # Still need to get DATA_DIR from existing config for service creation
-        DATA_DIR=$(grep "^InboundOrders=" ${CONFIG_FILE} | cut -d'=' -f2 | sed 's|/to_jakamo||')
+        print_info "Existing configuration found — merging any new options..."
+        DATA_DIR=$(grep "^InboundOrders=" "${CONFIG_FILE}" | cut -d'=' -f2 | sed 's|/to_jakamo||' | tr -d '\r')
+        merge_config
         return
     fi
     
@@ -383,12 +466,18 @@ show_post_install_info() {
     echo ""
     echo -e "${GREEN}Data Directories:${NC}"
     echo "  To Jakamo:   ${DATA_DIR}/to_jakamo"
+    echo "  Attachments: ${DATA_DIR}/to_jakamo/attachments"
     echo "  From Jakamo: ${DATA_DIR}/from_jakamo"
     echo "  Processed:   ${DATA_DIR}/processed"
     echo "  Failed:      ${DATA_DIR}/failed"
     echo ""
     echo -e "${YELLOW}To send orders to Jakamo, place XML files in:${NC}"
     echo "  ${DATA_DIR}/to_jakamo"
+    echo ""
+    echo -e "${YELLOW}To upload file attachments, place files in:${NC}"
+    echo "  ${DATA_DIR}/to_jakamo/attachments"
+    echo -e "${YELLOW}Filename must start with the order number followed by underscore, e.g.:${NC}"
+    echo "  PO-1234_drawing.pdf  ->  uploaded to order PO-1234"
     echo ""
 }
 
@@ -406,7 +495,7 @@ main() {
         backup_config
         install_files
         # Get DATA_DIR from existing config
-        DATA_DIR=$(grep "^InboundOrders=" ${CONFIG_FILE} 2>/dev/null | cut -d'=' -f2 | sed 's|/to_jakamo||' || echo "/var/lib/jakamo")
+        DATA_DIR=$(grep "^InboundOrders=" "${CONFIG_FILE}" 2>/dev/null | cut -d'=' -f2 | sed 's|/to_jakamo||' | tr -d '\r' || echo "/var/lib/jakamo")
         create_directories
         # Skip configuration prompt on upgrade
         setup_configuration

@@ -8,6 +8,7 @@ public class ConnectorConfig
     public required Oauth2Credentials Oauth2Credentials { get; init; }
     public required FolderConfig Folders { get; init; }
     public required PollingConfig Polling { get; init; }
+    public required ResponseConfig Responses { get; init; }
     public required LoggingConfig Logging { get; init; }
 }
 

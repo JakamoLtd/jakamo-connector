@@ -21,6 +21,16 @@ function Write-Warning-Custom {
     Write-Host "[WARN] $Message" -ForegroundColor Yellow
 }
 
+# Run tests
+Write-Info "Running tests..."
+dotnet test ".\tests\Jakamo.Connector.Tests\Jakamo.Connector.Tests.csproj" --configuration Release
+
+if ($LASTEXITCODE -ne 0) {
+    Write-Error "Tests failed! Aborting package build."
+    exit 1
+}
+Write-Info "All tests passed."
+
 # Clean previous build
 Write-Info "Cleaning previous build..."
 if (Test-Path $BuildDir) {
@@ -70,6 +80,16 @@ if (Test-Path ".\uninstall.sh") {
     Write-Warning-Custom "uninstall.sh not found in current directory"
 }
 
+# Convert shell scripts and Linux config files to LF line endings
+Write-Info "Ensuring Unix line endings (LF) on Linux-target files..."
+$linuxFiles = Get-ChildItem -Path $DistDir -Recurse -Include "*.sh", "*.conf", "*.conf_sample"
+foreach ($file in $linuxFiles) {
+    $content = [System.IO.File]::ReadAllText($file.FullName)
+    $converted = $content -replace "`r`n", "`n" -replace "`r", "`n"
+    [System.IO.File]::WriteAllText($file.FullName, $converted, [System.Text.UTF8Encoding]::new($false))
+    Write-Info "  LF: $($file.Name)"
+}
+
 # Create README.md
 Write-Info "Creating README..."
 $readmeContent = @"
@@ -105,13 +125,15 @@ sudo nano /etc/jakamo-connector/jakamo-connector.conf
    - **ClientId**: Your OAuth2 client ID (provided by Jakamo)
    - **ClientSecret**: Your OAuth2 client secret (provided by Jakamo)
    - **BaseUrl**: Jakamo API endpoint
-   - **TokenEndpoint**: OAuth2 token endpoint
+   - **TenantId**: Your Azure AD tenant ID (provided by Jakamo)
+   - **ApiScope**: OAuth2 API scope (provided by Jakamo)
 
 5. The installer automatically creates required folders:
-   - ``/var/lib/jakamo/inbound`` - Place XML files here for processing
+   - ``/var/lib/jakamo/to_jakamo`` - Place XML order files here for processing
+   - ``/var/lib/jakamo/to_jakamo/attachments`` - Place file attachments here to upload
    - ``/var/lib/jakamo/processed`` - Successfully processed files
    - ``/var/lib/jakamo/failed`` - Failed files for review
-   - ``/var/lib/jakamo/responses`` - Order responses from Jakamo
+   - ``/var/lib/jakamo/from_jakamo`` - Order responses from Jakamo
 
 6. Restart the service to apply configuration:
 ``````bash
@@ -124,7 +146,8 @@ The configuration file is located at: ``/etc/jakamo-connector/jakamo-connector.c
 
 ### API Configuration
 - ``BaseUrl``: Your Jakamo API endpoint
-- ``TokenEndpoint``: OAuth2 token endpoint
+- ``TenantId``: Your Azure AD tenant ID
+- ``ApiScope``: OAuth2 API scope
 - ``ClientId``: Your OAuth2 client ID
 - ``ClientSecret``: Your OAuth2 client secret
 
@@ -144,13 +167,27 @@ All folders are created automatically during installation with proper permission
 ## Usage
 
 ### Sending Orders to Jakamo
-1. Place your XML order files in ``/var/lib/jakamo/inbound``
-2. The connector automatically processes them
+1. Place your XML order files in ``/var/lib/jakamo/to_jakamo``
+2. The connector automatically detects and processes them
 3. Successfully processed files move to ``/var/lib/jakamo/processed``
-4. Failed files move to ``/var/lib/jakamo/failed``
+4. Failed files move to ``/var/lib/jakamo/failed`` with an ``.error.txt`` file explaining the error
+
+### Uploading File Attachments
+Attachments are linked to orders by filename. The filename must start with the order number followed by an underscore:
+
+``{OrderNumber}_{FileName}.{ext}``
+
+For example: ``PO-1234_drawing.pdf`` will be uploaded as an attachment to order ``PO-1234``.
+
+1. Place the file in ``/var/lib/jakamo/to_jakamo/attachments``
+2. The connector uploads it to the correct order automatically
+3. Successfully uploaded files move to ``/var/lib/jakamo/processed``
+4. Failed uploads move to ``/var/lib/jakamo/failed`` with an ``.error.txt`` file
+
+Supported file types include PDF, XML, CSV, Excel, ZIP, PNG, JPEG, and others (unknown types are sent as ``application/octet-stream``).
 
 ### Receiving Order Responses
-Order responses from Jakamo are automatically saved to ``/var/lib/jakamo/responses``
+Order responses from Jakamo are automatically saved to ``/var/lib/jakamo/from_jakamo``
 
 ## Service Management
 
@@ -209,12 +246,12 @@ sudo tail -f /var/log/jakamo/connector.log
 ``````
 
 ### Files not being processed
-1. Verify files are in the correct folder: ``/var/lib/jakamo/inbound``
+1. Verify files are in the correct folder: ``/var/lib/jakamo/to_jakamo`` (or ``attachments`` subfolder for file attachments)
 2. Check folder permissions (should be owned by jakamo user)
 3. Review logs for error messages
 
 ### Connection issues
-1. Verify BaseUrl and TokenEndpoint are correct
+1. Verify BaseUrl, TenantId, and ApiScope are correct
 2. Test network connectivity to the API endpoint
 3. Verify ClientId and ClientSecret are valid
 
