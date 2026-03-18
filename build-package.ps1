@@ -125,7 +125,8 @@ sudo nano /etc/jakamo-connector/jakamo-connector.conf
    - **ClientId**: Your OAuth2 client ID (provided by Jakamo)
    - **ClientSecret**: Your OAuth2 client secret (provided by Jakamo)
    - **BaseUrl**: Jakamo API endpoint
-   - **TokenEndpoint**: OAuth2 token endpoint
+   - **TenantId**: Your Azure AD tenant ID (provided by Jakamo)
+   - **ApiScope**: OAuth2 API scope (provided by Jakamo)
 
 5. The installer automatically creates required folders:
    - ``/var/lib/jakamo/to_jakamo`` - Place XML order files here for processing
@@ -145,7 +146,8 @@ The configuration file is located at: ``/etc/jakamo-connector/jakamo-connector.c
 
 ### API Configuration
 - ``BaseUrl``: Your Jakamo API endpoint
-- ``TokenEndpoint``: OAuth2 token endpoint
+- ``TenantId``: Your Azure AD tenant ID
+- ``ApiScope``: OAuth2 API scope
 - ``ClientId``: Your OAuth2 client ID
 - ``ClientSecret``: Your OAuth2 client secret
 
@@ -249,7 +251,7 @@ sudo tail -f /var/log/jakamo/connector.log
 3. Review logs for error messages
 
 ### Connection issues
-1. Verify BaseUrl and TokenEndpoint are correct
+1. Verify BaseUrl, TenantId, and ApiScope are correct
 2. Test network connectivity to the API endpoint
 3. Verify ClientId and ClientSecret are valid
 
