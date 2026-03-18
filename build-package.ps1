@@ -105,6 +105,8 @@ Version: $Version
 
 ## Installation
 
+The process is the same for first-time installation or updating an existing installation. The installer will handle both cases.
+
 1. Extract the installation package:
 ``````bash
 tar -xzf jakamo-connector-$Version.tar.gz

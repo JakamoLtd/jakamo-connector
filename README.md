@@ -9,6 +9,8 @@
 
 ## Installation
 
+The process is the same for first-time installation or updating an existing installation. The installer will handle both cases.
+
 1. Download installation package from
 ```bash
 wget https://github.com/JakamoLtd/jakamo-connector/releases/download/1.0.1/jakamo-connector-1.0.1.tar.gz
